@@ -1,137 +1,70 @@
 'use client'
 
 import React from 'react'
-import { 
-  DragDrop, 
-  Share2, 
-  BarChart3, 
-  Zap, 
-  Shield, 
-  Smartphone, 
-  Download, 
-  Palette 
-} from 'lucide-react'
+import { BarChart3, Download, Palette, Share2, Shield, Smartphone, Zap, MousePointer } from 'lucide-react';
 
 const features = [
   {
-    icon: DragDrop,
+    icon: MousePointer,
     title: 'Drag & Drop Builder',
-    description: 'Create forms visually with our intuitive drag-and-drop interface. No coding required.',
-    color: 'primary'
-  },
-  {
-    icon: Share2,
-    title: 'Easy Sharing',
-    description: 'Share your forms via link, embed on your website, or integrate with your favorite tools.',
-    color: 'success'
+    description: 'Créez des formulaires intuitifs avec notre interface drag & drop moderne.',
   },
   {
     icon: BarChart3,
-    title: 'Real-time Analytics',
-    description: 'Track responses, view completion rates, and analyze data with beautiful charts and insights.',
-    color: 'warning'
-  },
-  {
-    icon: Zap,
-    title: 'Smart Automation',
-    description: 'Set up email notifications, webhooks, and automated workflows to streamline your process.',
-    color: 'secondary'
+    title: 'Analytics Avancés',
+    description: 'Analysez vos réponses avec des graphiques et insights détaillés.',
   },
   {
     icon: Shield,
-    title: 'Enterprise Security',
-    description: 'Bank-level security with SSL encryption, GDPR compliance, and secure data storage.',
-    color: 'error'
+    title: 'Sécurité Enterprise',
+    description: 'Vos données sont protégées avec un chiffrement de niveau bancaire.',
   },
   {
-    icon: Smartphone,
-    title: 'Mobile Optimized',
-    description: 'All forms are automatically optimized for mobile devices and work perfectly on any screen.',
-    color: 'primary'
+    icon: Share2,
+    title: 'Partage Facile',
+    description: 'Partagez vos formulaires avec un simple lien ou intégration.',
   },
   {
     icon: Download,
-    title: 'Export & Integrations',
-    description: 'Export responses to CSV, Excel, or integrate with Google Sheets, Zapier, and more.',
-    color: 'success'
+    title: 'Export CSV',
+    description: 'Exportez toutes vos réponses au format CSV pour analyse.',
   },
   {
-    icon: Palette,
-    title: 'Custom Branding',
-    description: 'Remove branding, add your logo, and customize colors to match your brand identity.',
-    color: 'warning'
-  }
-]
+    icon: Zap,
+    title: 'IA Intégrée',
+    description: 'Suggestions de champs et analyse intelligente avec OpenAI.',
+  },
+];
 
-const getColorClasses = (color: string) => {
-  const colors = {
-    primary: 'bg-primary-100 text-primary-600',
-    success: 'bg-success-100 text-success-600',
-    warning: 'bg-warning-100 text-warning-600',
-    secondary: 'bg-secondary-100 text-secondary-600',
-    error: 'bg-error-100 text-error-600'
-  }
-  return colors[color as keyof typeof colors] || colors.primary
-}
-
-export function FeaturesSection() {
+export default function FeaturesSection() {
   return (
-    <section id="features" className="py-20 bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
+    <section className="py-20 bg-gray-50">
+      <div className="container mx-auto px-4">
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            Everything You Need to Build Amazing Forms
+          <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            Tout ce dont vous avez besoin
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            From simple contact forms to complex surveys, our platform provides all the tools 
-            you need to create, share, and analyze forms that drive results.
+            Créez, partagez et analysez vos formulaires avec des outils puissants et intuitifs.
           </p>
         </div>
 
-        {/* Features Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {features.map((feature, index) => (
-            <div 
-              key={index}
-              className="group p-6 rounded-xl border border-gray-100 hover:border-primary-200 hover:shadow-medium transition-all duration-300 hover:-translate-y-1"
-            >
-              {/* Icon */}
-              <div className={`w-12 h-12 rounded-lg ${getColorClasses(feature.color)} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
-                <feature.icon className="w-6 h-6" />
+            <div key={index} className="bg-white p-8 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-6">
+                <feature.icon className="w-6 h-6 text-blue-600" />
               </div>
-
-              {/* Content */}
-              <h3 className="text-lg font-semibold text-gray-900 mb-2 group-hover:text-primary-600 transition-colors">
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">
                 {feature.title}
               </h3>
-              <p className="text-gray-600 leading-relaxed">
+              <p className="text-gray-600">
                 {feature.description}
               </p>
             </div>
           ))}
         </div>
-
-        {/* CTA Section */}
-        <div className="mt-16 text-center">
-          <div className="bg-gradient-to-r from-primary-50 to-secondary-50 rounded-2xl p-8 border border-primary-100">
-            <h3 className="text-2xl font-bold text-gray-900 mb-4">
-              Ready to Get Started?
-            </h3>
-            <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
-              Join thousands of creators who are already building better forms and collecting more responses.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button className="btn-primary px-8 py-3">
-                Start Building Free
-              </button>
-              <button className="btn-secondary px-8 py-3">
-                View Templates
-              </button>
-            </div>
-          </div>
-        </div>
       </div>
     </section>
-  )
+  );
 }

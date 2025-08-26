@@ -2,64 +2,74 @@ import bcrypt from 'bcryptjs';
 import { prisma } from './db';
 import { signJwt, verifyJwt, JwtPayload } from './jwt';
 import { getAuthCookie, setAuthCookie, clearAuthCookie } from './cookies';
-import { Role } from '@prisma/client';
+
+type Role = 'USER' | 'ADMIN';
 
 export async function registerUser(email: string, password: string, name?: string) {
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
-    throw new Error('EMAIL_IN_USE');
+    throw new Error('EMAIL_ALREADY_EXISTS');
   }
-  const passwordHash = await bcrypt.hash(password, 10);
+
+  const hashedPassword = await bcrypt.hash(password, 12);
+  
   const user = await prisma.user.create({
-    data: { email, passwordHash, name, role: Role.USER },
+    data: {
+      email,
+      password: hashedPassword,
+      name,
+      role: 'USER' as Role,
+    },
   });
-  const token = signJwt({ sub: user.id, role: user.role });
-  setAuthCookie(token);
-  return sanitizeUser(user);
+
+  return user;
 }
 
-export async function loginUser(email: string, password: string) {
+export async function authenticateUser(email: string, password: string) {
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user) {
     throw new Error('INVALID_CREDENTIALS');
   }
-  const ok = await bcrypt.compare(password, user.passwordHash);
-  if (!ok) {
+
+  const isValid = await bcrypt.compare(password, user.password);
+  if (!isValid) {
     throw new Error('INVALID_CREDENTIALS');
   }
-  await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
-  const token = signJwt({ sub: user.id, role: user.role });
-  setAuthCookie(token);
-  return sanitizeUser(user);
+
+  return user;
 }
 
-export function logoutUser() {
-  clearAuthCookie();
-}
-
-export function getAuthUserId(): string | null {
+export async function getCurrentUser(): Promise<any> {
   const token = getAuthCookie();
   if (!token) return null;
-  const payload = verifyJwt<JwtPayload>(token);
-  return payload?.sub ?? null;
+
+  try {
+    const payload = await verifyJwt(token);
+    if (!payload || !payload.sub) return null;
+    
+    const user = await prisma.user.findUnique({
+      where: { id: payload.sub },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        stripeCustomerId: true,
+      },
+    });
+    return user;
+  } catch (error) {
+    return null;
+  }
 }
 
-export async function getCurrentUser() {
-  const userId = getAuthUserId();
-  if (!userId) return null;
-  const user = await prisma.user.findUnique({ where: { id: userId } });
-  return user ? sanitizeUser(user) : null;
+export async function createAuthSession(userId: string) {
+  const token = await signJwt({ sub: userId, role: 'USER' as Role });
+  setAuthCookie(token);
 }
 
-export type SafeUser = {
-  id: string;
-  email: string;
-  name: string | null;
-  role: 'USER' | 'ADMIN';
-};
-
-function sanitizeUser(user: { id: string; email: string; name: string | null; role: Role }): SafeUser {
-  return { id: user.id, email: user.email, name: user.name, role: user.role };
+export async function clearAuthSession() {
+  clearAuthCookie();
 }
 
 

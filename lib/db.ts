@@ -7,11 +7,13 @@ declare global {
 
 // Configuration optimisée pour Supabase et Vercel
 const prismaClientSingleton = () => {
+  const databaseUrl = process.env.DATABASE_URL || 'postgresql://user:password@localhost:5432/tally_like';
+  
   return new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['error', 'warn', 'query'] : ['error'],
     datasources: {
       db: {
-        url: process.env.DATABASE_URL,
+        url: databaseUrl,
       },
     },
   });

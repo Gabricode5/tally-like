@@ -5,6 +5,9 @@ import { json, error } from '@/app/api/_utils';
 
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET!;
 
+// Configuration pour le webhook Stripe (pas de bodyParser)
+export const runtime = 'nodejs';
+
 export async function POST(req: NextRequest) {
   try {
     if (!stripe) {
@@ -99,18 +102,12 @@ async function handleSubscriptionCanceled(subscription: any) {
   await prisma.subscription.update({
     where: { userId: user.id },
     data: {
-      status: 'canceled',
+      status: 'CANCELED',
       currentPeriodEnd: new Date(subscription.canceled_at * 1000),
     },
   });
 
   console.log(`Subscription canceled for user ${user.id}`);
 }
-
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
 
 

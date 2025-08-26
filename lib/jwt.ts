@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET!;
+const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production';
 if (!JWT_SECRET) {
   throw new Error('JWT_SECRET is not set');
 }
@@ -12,7 +12,7 @@ export type JwtPayload = {
 };
 
 export function signJwt(payload: JwtPayload, expiresIn: string = '7d'): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn });
+  return jwt.sign(payload, JWT_SECRET, { expiresIn } as jwt.SignOptions);
 }
 
 export function verifyJwt<T = JwtPayload>(token: string): T | null {

@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { FieldType } from '@prisma/client';
 import AISuggestions from './AISuggestions';
+
+type FieldType = 'TEXT' | 'EMAIL' | 'NUMBER' | 'TEXTAREA' | 'SELECT' | 'CHECKBOX' | 'RADIO';
 
 interface Field {
   id: string;
@@ -101,165 +102,203 @@ export default function FormBuilder({ formId, initialData, onSave }: FormBuilder
           <Input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Ex: Formulaire de contact"
+            placeholder="Titre de votre formulaire"
             required
           />
         </div>
-        
         <div>
-          <label className="block text-sm font-medium mb-1">Description (optionnel)</label>
+          <label className="block text-sm font-medium mb-1">Description</label>
           <Input
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Décrivez le but de votre formulaire"
+            placeholder="Description optionnelle"
           />
         </div>
       </div>
 
-      {/* Suggestions IA */}
-      <div className="border-t pt-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold">Champs du formulaire</h3>
-          <Button
-            onClick={() => setShowAISuggestions(!showAISuggestions)}
-            variant="outline"
-            size="sm"
-          >
-            {showAISuggestions ? 'Masquer' : 'Suggestions IA'}
-          </Button>
-        </div>
-
-        {showAISuggestions && (
-          <AISuggestions onApplySuggestions={handleAISuggestions} />
-        )}
+      {/* Bouton IA Suggestions */}
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-medium">Champs du formulaire</h3>
+        <Button
+          type="button"
+          onClick={() => setShowAISuggestions(!showAISuggestions)}
+          variant="outline"
+          size="sm"
+        >
+          {showAISuggestions ? 'Fermer IA' : 'Suggestions IA'}
+        </Button>
       </div>
 
-      {/* Types de champs disponibles */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-        {Object.values(FieldType).map((type) => (
-          <Button
-            key={type}
-            onClick={() => addField(type)}
-            variant="outline"
-            size="sm"
-            className="text-xs"
-          >
-            + {type}
-          </Button>
-        ))}
+      {/* Suggestions IA */}
+      {showAISuggestions && (
+        <AISuggestions onApplySuggestions={handleAISuggestions} />
+      )}
+
+      {/* Boutons d'ajout de champs */}
+      <div className="flex flex-wrap gap-2">
+        <Button
+          type="button"
+          onClick={() => addField('TEXT')}
+          size="sm"
+          variant="outline"
+        >
+          + Texte
+        </Button>
+        <Button
+          type="button"
+          onClick={() => addField('EMAIL')}
+          size="sm"
+          variant="outline"
+        >
+          + Email
+        </Button>
+        <Button
+          type="button"
+          onClick={() => addField('NUMBER')}
+          size="sm"
+          variant="outline"
+        >
+          + Nombre
+        </Button>
+        <Button
+          type="button"
+          onClick={() => addField('TEXTAREA')}
+          size="sm"
+          variant="outline"
+        >
+          + Zone de texte
+        </Button>
+        <Button
+          type="button"
+          onClick={() => addField('SELECT')}
+          size="sm"
+          variant="outline"
+        >
+          + Liste déroulante
+        </Button>
+        <Button
+          type="button"
+          onClick={() => addField('RADIO')}
+          size="sm"
+          variant="outline"
+        >
+          + Boutons radio
+        </Button>
+        <Button
+          type="button"
+          onClick={() => addField('CHECKBOX')}
+          size="sm"
+          variant="outline"
+        >
+          + Case à cocher
+        </Button>
       </div>
 
       {/* Liste des champs */}
       <div className="space-y-4">
         {fields.map((field, index) => (
-          <div key={field.id} className="border rounded-lg p-4 bg-white">
-            <div className="flex justify-between items-start mb-3">
-              <div className="flex-1 space-y-3">
-                <Input
-                  value={field.label}
-                  onChange={(e) => updateField(field.id, { label: e.target.value })}
-                  placeholder="Label du champ"
-                />
-                
-                <div className="flex items-center space-x-4">
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={field.required}
-                      onChange={(e) => updateField(field.id, { required: e.target.checked })}
-                      className="mr-2"
-                    />
-                    Requis
-                  </label>
-                  
-                  <span className="text-sm text-gray-500">
-                    Type: {field.type}
-                  </span>
-                </div>
-
-                {/* Options pour SELECT et RADIO */}
-                {(field.type === 'SELECT' || field.type === 'RADIO') && field.options && (
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium">Options:</label>
-                    {field.options.map((option, optionIndex) => (
-                      <div key={optionIndex} className="flex items-center space-x-2">
-                        <Input
-                          value={option}
-                          onChange={(e) => {
-                            const newOptions = [...field.options!];
-                            newOptions[optionIndex] = e.target.value;
-                            updateField(field.id, { options: newOptions });
-                          }}
-                          placeholder={`Option ${optionIndex + 1}`}
-                          size="sm"
-                        />
-                        <Button
-                          onClick={() => {
-                            const newOptions = field.options!.filter((_, i) => i !== optionIndex);
-                            updateField(field.id, { options: newOptions });
-                          }}
-                          variant="outline"
-                          size="sm"
-                        >
-                          Supprimer
-                        </Button>
-                      </div>
-                    ))}
-                    <Button
-                      onClick={() => {
-                        const newOptions = [...field.options!, `Option ${field.options!.length + 1}`];
-                        updateField(field.id, { options: newOptions });
-                      }}
-                      variant="outline"
-                      size="sm"
-                    >
-                      + Ajouter option
-                    </Button>
-                  </div>
-                )}
+          <div key={field.id} className="border rounded-lg p-4 bg-gray-50">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs bg-gray-200 px-2 py-1 rounded">
+                  {field.type}
+                </span>
+                <span className="text-xs text-gray-500">
+                  #{index + 1}
+                </span>
               </div>
-              
-              <div className="flex items-center space-x-2 ml-4">
-                {index > 0 && (
-                  <Button
-                    onClick={() => moveField(index, index - 1)}
-                    variant="outline"
-                    size="sm"
-                  >
-                    ↑
-                  </Button>
-                )}
-                {index < fields.length - 1 && (
-                  <Button
-                    onClick={() => moveField(index, index + 1)}
-                    variant="outline"
-                    size="sm"
-                  >
-                    ↓
-                  </Button>
-                )}
+              <div className="flex items-center gap-2">
                 <Button
+                  type="button"
                   onClick={() => removeField(field.id)}
-                  variant="outline"
                   size="sm"
+                  variant="outline"
                   className="text-red-600 hover:text-red-700"
                 >
                   Supprimer
                 </Button>
               </div>
             </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium mb-1">Libellé *</label>
+                <Input
+                  value={field.label}
+                  onChange={(e) => updateField(field.id, { label: e.target.value })}
+                  placeholder="Libellé du champ"
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id={`required-${field.id}`}
+                  checked={field.required}
+                  onChange={(e) => updateField(field.id, { required: e.target.checked })}
+                  className="rounded"
+                />
+                <label htmlFor={`required-${field.id}`} className="text-sm">
+                  Champ obligatoire
+                </label>
+              </div>
+
+              {(field.type === 'SELECT' || field.type === 'RADIO') && (
+                <div>
+                  <label className="block text-sm font-medium mb-1">Options</label>
+                  <div className="space-y-2">
+                    {field.options?.map((option, optionIndex) => (
+                      <div key={optionIndex} className="flex items-center gap-2">
+                        <Input
+                          value={option}
+                          onChange={(e) => {
+                            const newOptions = [...(field.options || [])];
+                            newOptions[optionIndex] = e.target.value;
+                            updateField(field.id, { options: newOptions });
+                          }}
+                          placeholder={`Option ${optionIndex + 1}`}
+                        />
+                        <Button
+                          type="button"
+                          onClick={() => {
+                            const newOptions = field.options?.filter((_, i) => i !== optionIndex) || [];
+                            updateField(field.id, { options: newOptions });
+                          }}
+                          size="sm"
+                          variant="outline"
+                          className="text-red-600"
+                        >
+                          ×
+                        </Button>
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        const newOptions = [...(field.options || []), `Option ${(field.options?.length || 0) + 1}`];
+                        updateField(field.id, { options: newOptions });
+                      }}
+                      size="sm"
+                      variant="outline"
+                    >
+                      + Ajouter une option
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         ))}
       </div>
 
       {/* Bouton de sauvegarde */}
-      <div className="flex justify-end space-x-4 pt-6 border-t">
+      <div className="flex justify-end">
         <Button
           onClick={handleSave}
-          disabled={loading || !title.trim() || fields.length === 0}
-          className="bg-blue-600 hover:bg-blue-700"
+          disabled={loading || !title.trim()}
+          className="px-6"
         >
-          {loading ? 'Sauvegarde...' : 'Sauvegarder le formulaire'}
+          {loading ? 'Sauvegarde...' : 'Sauvegarder'}
         </Button>
       </div>
     </div>

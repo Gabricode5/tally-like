@@ -1,45 +1,57 @@
 import { prisma } from './db';
 import { PLAN_LIMITS } from './plans';
-import { Plan } from '@prisma/client';
+
+type Plan = 'FREE' | 'PRO' | 'TEAM';
 
 export async function getEffectivePlanForForm(formId: string): Promise<Plan> {
   const form = await prisma.form.findUnique({
     where: { id: formId },
-    select: { userId: true, teamId: true },
+    include: {
+      user: {
+        include: {
+          subscription: true,
+        },
+      },
+    },
   });
-  if (!form) throw new Error('NOT_FOUND');
 
-  if (form.teamId) {
-    const sub = await prisma.subscription.findUnique({ where: { teamId: form.teamId } });
-    return sub?.plan ?? Plan.FREE;
+  if (!form) {
+    throw new Error('Form not found');
   }
 
-  if (form.userId) {
-    const sub = await prisma.subscription.findUnique({ where: { userId: form.userId } });
-    return sub?.plan ?? Plan.FREE;
+  // Vérifier d'abord l'abonnement de l'utilisateur
+  if (form.user?.subscription && form.user.subscription.status === 'ACTIVE') {
+    return form.user.subscription.plan as Plan;
   }
 
-  return Plan.FREE;
+  // Sinon, plan gratuit
+  return 'FREE';
 }
 
-export async function assertSubmissionQuota(formId: string) {
-  const plan = await getEffectivePlanForForm(formId);
-  const { submissionsPerMonth } = PLAN_LIMITS[plan];
-
-  const monthStart = new Date();
-  monthStart.setUTCDate(1);
-  monthStart.setUTCHours(0, 0, 0, 0);
+export async function getMonthlySubmissionCount(formId: string): Promise<number> {
+  const startOfMonth = new Date();
+  startOfMonth.setDate(1);
+  startOfMonth.setHours(0, 0, 0, 0);
 
   const count = await prisma.submission.count({
     where: {
       formId,
-      createdAt: { gte: monthStart },
+      createdAt: {
+        gte: startOfMonth,
+      },
     },
   });
 
-  if (count >= submissionsPerMonth) {
-    const isFree = plan === 'FREE';
-    throw new Error(isFree ? 'FREE_QUOTA_EXCEEDED' : 'PLAN_QUOTA_EXCEEDED');
+  return count;
+}
+
+export async function assertSubmissionQuota(formId: string): Promise<void> {
+  const plan = await getEffectivePlanForForm(formId);
+  const currentCount = await getMonthlySubmissionCount(formId);
+  const limit = PLAN_LIMITS[plan].submissionsPerMonth;
+
+  if (currentCount >= limit) {
+    throw new Error('QUOTA_EXCEEDED');
   }
 }
 

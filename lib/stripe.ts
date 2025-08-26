@@ -1,6 +1,7 @@
 import Stripe from 'stripe';
 import { prisma } from './db';
-import { Plan } from '@prisma/client';
+
+type Plan = 'PRO' | 'TEAM';
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY!;
 const STRIPE_PRICE_PRO = process.env.STRIPE_PRICE_PRO!;
@@ -13,81 +14,95 @@ if (!STRIPE_SECRET_KEY && process.env.NODE_ENV === 'production') {
 
 // Configuration Stripe optimisée pour Vercel
 export const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY, {
-  apiVersion: '2024-06-20',
+  apiVersion: '2023-10-16',
   typescript: true,
 }) : null;
 
-export function getPriceIdForPlan(plan: Plan) {
+function getPriceIdForPlan(plan: Plan): string {
   switch (plan) {
     case 'PRO':
       return STRIPE_PRICE_PRO;
     case 'TEAM':
       return STRIPE_PRICE_TEAM;
     default:
-      throw new Error('NO_PRICE_FOR_FREE');
+      throw new Error(`Invalid plan: ${plan}`);
   }
 }
 
-export async function getOrCreateStripeCustomer(userId: string, email: string) {
-  if (!stripe) throw new Error('Stripe not configured');
+export async function getOrCreateStripeCustomer(userId: string): Promise<string> {
+  if (!stripe) {
+    throw new Error('Stripe not configured');
+  }
 
-  const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (!user) throw new Error('NOT_FOUND');
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { stripeCustomerId: true },
+  });
 
-  if (user.stripeCustomerId) {
+  if (user?.stripeCustomerId) {
+    // Vérifier que le customer existe toujours sur Stripe
     try {
-      return await stripe.customers.retrieve(user.stripeCustomerId);
-    } catch (error) {
-      // Si le customer n'existe plus sur Stripe, on le recrée
-      console.warn('Stripe customer not found, recreating:', user.stripeCustomerId);
+      await stripe.customers.retrieve(user.stripeCustomerId);
+      return user.stripeCustomerId;
+    } catch {
+      // Customer n'existe plus sur Stripe, on va le recréer
     }
   }
 
+  // Créer un nouveau customer
   const customer = await stripe.customers.create({
-    email,
     metadata: { userId },
   });
 
+  // Mettre à jour l'utilisateur
   await prisma.user.update({
     where: { id: userId },
     data: { stripeCustomerId: customer.id },
   });
 
-  return customer;
+  return customer.id;
 }
 
-export async function createCheckoutSession(userId: string, plan: Plan) {
-  if (!stripe) throw new Error('Stripe not configured');
+export async function createCheckoutSession(userId: string, plan: Plan): Promise<{ url: string }> {
+  if (!stripe) {
+    throw new Error('Stripe not configured');
+  }
 
-  const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (!user) throw new Error('NOT_FOUND');
-
-  const customer = await getOrCreateStripeCustomer(userId, user.email);
-
+  const customerId = await getOrCreateStripeCustomer(userId);
   const priceId = getPriceIdForPlan(plan);
 
   const session = await stripe.checkout.sessions.create({
+    customer: customerId,
+    payment_method_types: ['card'],
+    line_items: [
+      {
+        price: priceId,
+        quantity: 1,
+      },
+    ],
     mode: 'subscription',
-    customer: typeof customer === 'string' ? customer : customer.id,
-    line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${PUBLIC_APP_URL}/dashboard/billing?success=1`,
-    cancel_url: `${PUBLIC_APP_URL}/dashboard/billing?canceled=1`,
-    metadata: { userId, plan },
-    allow_promotion_codes: true,
-    billing_address_collection: 'auto',
+    success_url: `${PUBLIC_APP_URL}/dashboard/billing?success=true`,
+    cancel_url: `${PUBLIC_APP_URL}/dashboard/billing?canceled=true`,
+    metadata: {
+      userId,
+      plan,
+    },
   });
 
-  return session;
+  return { url: session.url! };
 }
 
-export async function createBillingPortal(customerId: string) {
-  if (!stripe) throw new Error('Stripe not configured');
+export async function createBillingPortal(customerId: string): Promise<{ url: string }> {
+  if (!stripe) {
+    throw new Error('Stripe not configured');
+  }
 
   const session = await stripe.billingPortal.sessions.create({
     customer: customerId,
     return_url: `${PUBLIC_APP_URL}/dashboard/billing`,
   });
-  return session;
+
+  return { url: session.url };
 }
 
 // Fonction utilitaire pour vérifier si Stripe est configuré

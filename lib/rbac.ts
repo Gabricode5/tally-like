@@ -1,61 +1,70 @@
-import { prisma } from './db';
-import { getAuthUserId } from './auth';
-
-export type TeamRole = 'OWNER' | 'EDITOR' | 'VIEWER';
+import { getAuthCookie } from './cookies';
+import { verifyJwt } from './jwt';
 
 export async function requireAuth(): Promise<string> {
-  const userId = getAuthUserId();
-  if (!userId) {
+  const token = getAuthCookie();
+  if (!token) {
     throw new Error('UNAUTHORIZED');
   }
-  return userId;
+
+  try {
+    const payload = await verifyJwt(token);
+    if (!payload || !payload.sub) {
+      throw new Error('UNAUTHORIZED');
+    }
+    return payload.sub;
+  } catch (error) {
+    throw new Error('UNAUTHORIZED');
+  }
 }
 
-export async function requireFormAccess(formId: string): Promise<{ userId: string; isTeamOwned: boolean }> {
+export async function requireFormAccess(formId: string): Promise<void> {
   const userId = await requireAuth();
-
+  
+  // Vérifier que l'utilisateur a accès au formulaire
+  const { prisma } = await import('./db');
   const form = await prisma.form.findUnique({
     where: { id: formId },
-    select: { userId: true, teamId: true },
+    select: { userId: true },
   });
-  if (!form) throw new Error('NOT_FOUND');
 
-  if (form.userId === userId) return { userId, isTeamOwned: false };
-
-  if (form.teamId) {
-    const member = await prisma.teamMember.findFirst({
-      where: { teamId: form.teamId, userId },
-    });
-    if (member) return { userId, isTeamOwned: true };
-  }
-
-  throw new Error('FORBIDDEN');
-}
-
-export async function canEditForm(formId: string): Promise<boolean> {
-  const userId = await requireAuth();
-  const form = await prisma.form.findUnique({ where: { id: formId }, select: { userId: true, teamId: true } });
-  if (!form) return false;
-  if (form.userId === userId) return true;
-  if (form.teamId) {
-    const member = await prisma.teamMember.findFirst({ where: { teamId: form.teamId, userId } });
-    // EDITOR and OWNER can edit
-    return !!member && (member.role === 'EDITOR' || member.role === 'OWNER');
-  }
-  return false;
-}
-
-const TEAM_ROLE_RANK: Record<TeamRole, number> = { VIEWER: 1, EDITOR: 2, OWNER: 3 };
-
-export async function requireTeamRole(teamId: string, minimumRole: TeamRole): Promise<{ userId: string; role: TeamRole }>
-{
-  const userId = await requireAuth();
-  const member = await prisma.teamMember.findFirst({ where: { teamId, userId } });
-  if (!member) throw new Error('FORBIDDEN');
-  if (TEAM_ROLE_RANK[member.role as TeamRole] < TEAM_ROLE_RANK[minimumRole]) {
+  if (!form || form.userId !== userId) {
     throw new Error('FORBIDDEN');
   }
-  return { userId, role: member.role as TeamRole };
+}
+
+export async function requireTeamRole(teamId: string, requiredRole: 'OWNER' | 'EDITOR' | 'VIEWER'): Promise<void> {
+  const userId = await requireAuth();
+  
+  const { prisma } = await import('./db');
+  const member = await prisma.teamMember.findUnique({
+    where: {
+      userId_teamId: {
+        userId,
+        teamId,
+      },
+    },
+    select: { role: true },
+  });
+
+  if (!member) {
+    throw new Error('FORBIDDEN');
+  }
+
+  // Hiérarchie des rôles : OWNER > EDITOR > VIEWER
+  const roleHierarchy = { OWNER: 3, EDITOR: 2, VIEWER: 1 };
+  const userRoleLevel = roleHierarchy[member.role as keyof typeof roleHierarchy] || 0;
+  const requiredRoleLevel = roleHierarchy[requiredRole];
+
+  if (userRoleLevel < requiredRoleLevel) {
+    throw new Error('FORBIDDEN');
+  }
+}
+
+export function canEditForm(userRole: string, teamRole?: string): boolean {
+  if (userRole === 'ADMIN') return true;
+  if (teamRole === 'OWNER' || teamRole === 'EDITOR') return true;
+  return false;
 }
 
 

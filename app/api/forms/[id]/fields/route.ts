@@ -2,50 +2,48 @@ import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireFormAccess } from '@/lib/rbac';
 import { error, json, readJson } from '@/app/api/_utils';
-import { FieldType } from '@prisma/client';
+
+type FieldType = 'TEXT' | 'EMAIL' | 'NUMBER' | 'TEXTAREA' | 'SELECT' | 'CHECKBOX' | 'RADIO';
 
 type FieldInput = {
   id?: string;
-  label: string;
   type: FieldType;
-  required?: boolean;
+  label: string;
+  required: boolean;
   order: number;
-  options?: string[] | null;
+  options?: string[];
 };
-
-type Body = { fields: FieldInput[] };
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     await requireFormAccess(params.id);
-    const body = await readJson<Body>(req);
+    const { fields }: { fields: FieldInput[] } = await readJson(req);
 
-    await prisma.$transaction(async (tx) => {
-      await tx.field.deleteMany({ where: { formId: params.id } });
-      if (body.fields?.length) {
-        await tx.field.createMany({
-          data: body.fields.map((f) => ({
+    // Supprimer tous les champs existants
+    await prisma.field.deleteMany({ where: { formId: params.id } });
+
+    // Créer les nouveaux champs
+    const createdFields = await Promise.all(
+      fields.map((field) =>
+        prisma.field.create({
+          data: {
             formId: params.id,
-            label: f.label,
-            type: f.type,
-            required: !!f.required,
-            order: f.order,
-            optionsJson: f.options ? JSON.stringify(f.options) : null,
-          })),
-        });
-      }
-    });
+            type: field.type,
+            label: field.label,
+            required: field.required,
+            order: field.order,
+            optionsJson: field.options ? JSON.stringify(field.options) : null,
+          },
+        })
+      )
+    );
 
-    const fields = await prisma.field.findMany({
-      where: { formId: params.id },
-      orderBy: { order: 'asc' },
-    });
-
-    return json({ fields });
+    return json(createdFields);
   } catch (e: any) {
-    if (e.message === 'UNAUTHORIZED') return error('UNAUTHORIZED', 401);
+    console.error('Fields update error:', e);
     if (e.message === 'FORBIDDEN') return error('FORBIDDEN', 403);
-    return error('FIELDS_UPDATE_FAILED', 400);
+    if (e.message === 'NOT_FOUND') return error('NOT_FOUND', 404);
+    return error('INTERNAL_ERROR', 500);
   }
 }
 

@@ -1,97 +1,147 @@
-import { PrismaClient, Role, Plan, FieldType, TeamRole } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+
+type Role = 'USER' | 'ADMIN';
+type Plan = 'FREE' | 'PRO' | 'TEAM';
+type FieldType = 'TEXT' | 'EMAIL' | 'NUMBER' | 'TEXTAREA' | 'SELECT' | 'CHECKBOX' | 'RADIO';
+type TeamRole = 'OWNER' | 'EDITOR' | 'VIEWER';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  const passwordHash = await bcrypt.hash('password123', 10);
+  console.log('🌱 Seeding database...');
 
-  const user = await prisma.user.upsert({
-    where: { email: 'admin@example.com' },
-    update: {},
-    create: {
+  // Nettoyer la base de données
+  await prisma.submissionAnswer.deleteMany();
+  await prisma.submission.deleteMany();
+  await prisma.field.deleteMany();
+  await prisma.form.deleteMany();
+  await prisma.subscription.deleteMany();
+  await prisma.teamMember.deleteMany();
+  await prisma.team.deleteMany();
+  await prisma.user.deleteMany();
+
+  // Créer un utilisateur admin
+  const adminPassword = await bcrypt.hash('admin123', 12);
+  const admin = await prisma.user.create({
+    data: {
       email: 'admin@example.com',
-      passwordHash,
-      name: 'Admin',
-      role: Role.ADMIN,
-      notifyOnSubmit: true,
-      subscription: {
-        create: {
-          plan: Plan.PRO,
-        },
-      },
+      password: adminPassword,
+      name: 'Admin User',
+      role: 'ADMIN' as Role,
     },
-    include: { subscription: true },
   });
 
+  // Créer un utilisateur normal
+  const userPassword = await bcrypt.hash('user123', 12);
+  const user = await prisma.user.create({
+    data: {
+      email: 'user@example.com',
+      password: userPassword,
+      name: 'Normal User',
+      role: 'USER' as Role,
+    },
+  });
+
+  // Créer une équipe
   const team = await prisma.team.create({
     data: {
       name: 'Demo Team',
-      ownerId: user.id,
-      subscription: {
-        create: {
-          plan: Plan.TEAM,
-        },
-      },
+      description: 'Une équipe de démonstration',
+      ownerId: admin.id,
     },
-    include: { subscription: true },
+  });
+
+  // Ajouter des membres à l'équipe
+  await prisma.teamMember.create({
+    data: {
+      userId: admin.id,
+      teamId: team.id,
+      role: 'OWNER' as TeamRole,
+    },
   });
 
   await prisma.teamMember.create({
     data: {
-      teamId: team.id,
       userId: user.id,
-      role: TeamRole.OWNER,
+      teamId: team.id,
+      role: 'EDITOR' as TeamRole,
     },
   });
 
-  const viewer = await prisma.user.upsert({
-    where: { email: 'viewer@example.com' },
-    update: {},
-    create: { email: 'viewer@example.com', passwordHash, name: 'Viewer', role: Role.USER },
-  });
-
-  await prisma.teamMember.create({
-    data: { teamId: team.id, userId: viewer.id, role: TeamRole.VIEWER },
-  });
-
-  const editor = await prisma.user.upsert({
-    where: { email: 'editor@example.com' },
-    update: {},
-    create: { email: 'editor@example.com', passwordHash, name: 'Editor', role: Role.USER },
-  });
-
-  await prisma.teamMember.create({
-    data: { teamId: team.id, userId: editor.id, role: TeamRole.EDITOR },
-  });
-
+  // Créer un formulaire
   const form = await prisma.form.create({
     data: {
-      title: 'Demo Feedback',
-      description: 'Collect feedback from users',
+      title: 'Formulaire de contact',
+      description: 'Un formulaire de démonstration',
       userId: user.id,
       isPublished: true,
       notifyOnSubmit: true,
-      fields: {
-        createMany: {
-          data: [
-            { label: 'Name', type: FieldType.TEXT, required: true, order: 1 },
-            { label: 'Email', type: FieldType.EMAIL, required: true, order: 2 },
-            { label: 'Feedback', type: FieldType.TEXTAREA, required: true, order: 3 },
-            { label: 'Rating', type: FieldType.SELECT, required: false, order: 4, optionsJson: JSON.stringify(['1', '2', '3', '4', '5']) },
-          ],
-        },
-      },
     },
-    include: { fields: true },
   });
 
-  console.log('Seed complete:', { user: user.email, team: team.name, form: form.title });
+  // Ajouter des champs au formulaire
+  await prisma.field.createMany({
+    data: [
+      {
+        formId: form.id,
+        type: 'TEXT' as FieldType,
+        label: 'Nom',
+        required: true,
+        order: 0,
+      },
+      {
+        formId: form.id,
+        type: 'EMAIL' as FieldType,
+        label: 'Email',
+        required: true,
+        order: 1,
+      },
+      {
+        formId: form.id,
+        type: 'TEXTAREA' as FieldType,
+        label: 'Message',
+        required: true,
+        order: 2,
+      },
+    ],
+  });
+
+  // Créer quelques soumissions de test
+  const submission1 = await prisma.submission.create({
+    data: {
+      formId: form.id,
+    },
+  });
+
+  await prisma.submissionAnswer.createMany({
+    data: [
+      {
+        submissionId: submission1.id,
+        fieldId: (await prisma.field.findFirst({ where: { formId: form.id, order: 0 } }))!.id,
+        value: 'John Doe',
+      },
+      {
+        submissionId: submission1.id,
+        fieldId: (await prisma.field.findFirst({ where: { formId: form.id, order: 1 } }))!.id,
+        value: 'john@example.com',
+      },
+      {
+        submissionId: submission1.id,
+        fieldId: (await prisma.field.findFirst({ where: { formId: form.id, order: 2 } }))!.id,
+        value: 'Bonjour, j\'aimerais en savoir plus sur vos services.',
+      },
+    ],
+  });
+
+  console.log('✅ Database seeded successfully!');
+  console.log(`👤 Admin user: admin@example.com / admin123`);
+  console.log(`👤 Normal user: user@example.com / user123`);
 }
 
 main()
   .catch((e) => {
-    console.error(e);
+    console.error('❌ Seeding failed:', e);
     process.exit(1);
   })
   .finally(async () => {

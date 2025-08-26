@@ -2,7 +2,8 @@ import { NextRequest } from 'next/server';
 import { createCheckoutSession } from '@/lib/stripe';
 import { requireAuth } from '@/lib/rbac';
 import { json, error } from '@/app/api/_utils';
-import { Plan } from '@prisma/client';
+
+type Plan = 'PRO' | 'TEAM';
 
 export async function POST(req: NextRequest) {
   try {
