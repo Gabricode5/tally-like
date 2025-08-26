@@ -1,0 +1,392 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum TeamRole {
+  OWNER
+  EDITOR
+  VIEWER
+}
+
+enum Plan {
+  FREE
+  PRO
+  TEAM
+}
+
+model User {
+  id               String         @id @default(cuid())
+  email            String         @unique
+  passwordHash     String
+  name             String?
+  role             Role           @default(USER)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  forms            Form[]
+  submissions      Submission[]
+  subscription     Subscription?
+  teamsOwned       Team[]         @relation("TeamOwner")
+  teamMemberships  TeamMember[]
+  notifyOnSubmit   Boolean        @default(true)
+  stripeCustomerId String?
+  lastLoginAt      DateTime?
+}
+
+model Team {
+  id               String         @id @default(cuid())
+  name             String
+  ownerId          String
+  owner            User           @relation("TeamOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members          TeamMember[]
+  forms            Form[]
+  subscription     Subscription?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+}
+
+model TeamMember {
+  id        String   @id @default(cuid())
+  userId    String
+  teamId    String
+  role      TeamRole @default(VIEWER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, teamId])
+}
+
+model Subscription {
+  id                 String   @id @default(cuid())
+  plan               Plan     @default(FREE)
+  userId             String?
+  teamId             String?
+  stripeCustomerId   String?
+  stripeSubscriptionId String?
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  cancelAtPeriodEnd  Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team Team? @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([userId], map: "unique_user_subscription")
+  @@unique([teamId], map: "unique_team_subscription")
+}
+
+model Form {
+  id           String      @id @default(cuid())
+  title        String
+  description  String?
+  userId       String?
+  teamId       String?
+  isPublished  Boolean     @default(false)
+  notifyOnSubmit Boolean   @default(true)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  owner  User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team   Team? @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  fields Field[]
+  submissions Submission[]
+
+  @@index([userId])
+  @@index([teamId])
+}
+
+enum FieldType {
+  TEXT
+  TEXTAREA
+  EMAIL
+  NUMBER
+  SELECT
+  CHECKBOX
+  RADIO
+  DATE
+  FILE
+}
+
+model Field {
+  id          String    @id @default(cuid())
+  formId      String
+  label       String
+  type        FieldType
+  required    Boolean   @default(false)
+  order       Int
+  optionsJson String?   // for select/radio/checkbox
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  @@index([formId])
+}
+
+model Submission {
+  id          String    @id @default(cuid())
+  formId      String
+  userId      String?
+  createdAt   DateTime  @default(now())
+  answers     SubmissionAnswer[]
+  ipAddress   String?
+  userAgent   String?
+
+  form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([formId])
+  @@index([userId])
+}
+
+model SubmissionAnswer {
+  id            String   @id @default(cuid())
+  submissionId  String
+  fieldId       String
+  value         String
+  createdAt     DateTime @default(now())
+
+  submission Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  field      Field      @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+
+  @@index([submissionId])
+  @@index([fieldId])
+}
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Plan {
+  FREEMIUM
+  PRO
+  TEAM
+}
+
+enum FieldType {
+  TEXT
+  EMAIL
+  PHONE
+  NUMBER
+  TEXTAREA
+  SELECT
+  MULTISELECT
+  CHECKBOX
+  RADIO
+  DATE
+  FILE
+  RATING
+  SIGNATURE
+}
+
+enum TeamRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  UNPAID
+  TRIAL
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  firstName     String
+  lastName      String
+  password      String
+  plan          Plan      @default(FREEMIUM)
+  stripeCustomerId String? @unique
+  emailVerified Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  forms         Form[]
+  responses     Submission[]
+  teamMembers   TeamMember[]
+  ownedTeams    Team[]      @relation("TeamOwner")
+  subscriptions Subscription[]
+
+  @@map("users")
+}
+
+model Team {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  description String?
+  plan        Plan      @default(FREEMIUM)
+  stripeCustomerId String? @unique
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  owner       User      @relation("TeamOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId     String
+  members     TeamMember[]
+  forms       Form[]
+  subscriptions Subscription[]
+
+  @@map("teams")
+}
+
+model TeamMember {
+  id        String    @id @default(cuid())
+  role      TeamRole  @default(MEMBER)
+  joinedAt  DateTime  @default(now())
+
+  // Relations
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  team      Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  teamId    String
+
+  @@unique([userId, teamId])
+  @@map("team_members")
+}
+
+model Form {
+  id          String    @id @default(cuid())
+  title       String
+  slug        String    @unique
+  description String?
+  isPublished Boolean   @default(false)
+  isArchived  Boolean   @default(false)
+  settings    Json      @default("{}")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  owner       User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId     String
+  team        Team?     @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  teamId      String?
+  fields      FormField[]
+  submissions Submission[]
+
+  @@map("forms")
+}
+
+model FormField {
+  id          String    @id @default(cuid())
+  label       String
+  type        FieldType
+  required    Boolean   @default(false)
+  options     Json?     // For select, multiselect, radio, checkbox
+  validation  Json?     // Validation rules
+  order       Int
+  settings    Json      @default("{}")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  form        Form      @relation(fields: [formId], references: [id], onDelete: Cascade)
+  formId      String
+  responses   FieldResponse[]
+
+  @@map("form_fields")
+}
+
+model Submission {
+  id        String    @id @default(cuid())
+  submittedAt DateTime @default(now())
+  metadata  Json      @default("{}") // IP, user agent, referrer
+  status    String    @default("completed") // completed, spam, invalid
+
+  // Relations
+  form      Form      @relation(fields: [formId], references: [id], onDelete: Cascade)
+  formId    String
+  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId    String?
+  fields    FieldResponse[]
+
+  @@map("submissions")
+}
+
+model FieldResponse {
+  id        String    @id @default(cuid())
+  value     String
+  createdAt DateTime  @default(now())
+
+  // Relations
+  field     FormField @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+  fieldId   String
+  submission Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  submissionId String
+
+  @@unique([fieldId, submissionId])
+  @@map("field_responses")
+}
+
+model Subscription {
+  id                String            @id @default(cuid())
+  stripeSubscriptionId String          @unique
+  status            SubscriptionStatus
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  cancelAtPeriodEnd Boolean           @default(false)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  // Relations
+  user              User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId            String?
+  team              Team?             @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  teamId            String?
+
+  @@map("subscriptions")
+}
+
+model UsageCounter {
+  id        String    @id @default(cuid())
+  month     String    // Format: "2024-01"
+  count     Int       @default(0)
+  limit     Int       @default(50) // Freemium limit
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // Relations
+  user      User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String?
+  team      Team?     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  teamId    String?
+
+  @@unique([userId, teamId, month])
+  @@map("usage_counters")
+}
+
+model WebhookEvent {
+  id        String    @id @default(cuid())
+  type      String
+  payload   Json
+  processed Boolean   @default(false)
+  createdAt DateTime  @default(now())
+
+  @@map("webhook_events")
+}
