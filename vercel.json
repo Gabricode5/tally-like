@@ -8,16 +8,15 @@
     }
   },
   "env": {
-    "DATABASE_URL": "@database_url",
+    "NEXT_PUBLIC_SUPABASE_URL": "@next_public_supabase_url",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@next_public_supabase_anon_key",
+    "SUPABASE_SERVICE_ROLE_KEY": "@supabase_service_role_key",
     "JWT_SECRET": "@jwt_secret",
     "STRIPE_SECRET_KEY": "@stripe_secret_key",
     "STRIPE_PRICE_PRO": "@stripe_price_pro",
     "STRIPE_PRICE_TEAM": "@stripe_price_team",
     "STRIPE_WEBHOOK_SECRET": "@stripe_webhook_secret",
     "OPENAI_API_KEY": "@openai_api_key",
-    "EMAIL_PROVIDER": "@email_provider",
-    "POSTMARK_API_KEY": "@postmark_api_key",
-    "SENDGRID_API_KEY": "@sendgrid_api_key",
     "PUBLIC_APP_URL": "@public_app_url"
   }
 }
