@@ -13,18 +13,21 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:seed": "prisma db seed",
-    "vercel-build": "prisma generate && prisma db push && next build"
+    "vercel-build": "next build"
   },
   "dependencies": {
     "@prisma/client": "^5.7.1",
+    "@supabase/supabase-js": "^2.38.5",
     "@tailwindcss/forms": "^0.5.7",
     "bcryptjs": "^2.4.3",
+    "clsx": "^2.1.1",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.294.0",
     "next": "14.0.4",
     "openai": "^4.20.1",
     "react": "^18",
     "react-dom": "^18",
+    "react-hot-toast": "^2.6.0",
     "stripe": "^14.7.0",
     "swr": "^2.2.4"
   },

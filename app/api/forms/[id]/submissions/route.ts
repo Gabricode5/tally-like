@@ -16,7 +16,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       include: { 
         fields: true,
         user: {
-          select: { email: true }
+          select: { email: true, notifyOnSubmit: true }
         }
       },
     });
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     });
 
     // Notification email si activée
-    if (form.notifyOnSubmit && form.user?.email) {
+    if (form.user?.notifyOnSubmit && form.user?.email) {
       try {
         await sendEmail({
           to: form.user.email,

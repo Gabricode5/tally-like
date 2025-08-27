@@ -76,7 +76,7 @@ async function main() {
       description: 'Un formulaire de démonstration',
       userId: user.id,
       isPublished: true,
-      notifyOnSubmit: true,
+
     },
   });
 

@@ -19,7 +19,7 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
   }
 }
 
-type UpdateBody = { title?: string; description?: string; isPublished?: boolean; notifyOnSubmit?: boolean };
+type UpdateBody = { title?: string; description?: string; isPublished?: boolean };
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -31,7 +31,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         title: body.title,
         description: body.description,
         isPublished: body.isPublished,
-        notifyOnSubmit: body.notifyOnSubmit,
+
       },
     });
     return json({ form });

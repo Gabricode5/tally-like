@@ -32,7 +32,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
             label: field.label,
             required: field.required,
             order: field.order,
-            optionsJson: field.options ? JSON.stringify(field.options) : null,
+            options: field.options || [],
           },
         })
       )
