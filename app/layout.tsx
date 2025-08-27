@@ -7,30 +7,30 @@ import { AuthProvider } from '@/components/providers/AuthProvider'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'FormBuilder Pro - Create Beautiful Forms in Minutes',
-  description: 'Build, share, and collect responses with our powerful form builder. Start free, upgrade when you need more.',
-  keywords: 'form builder, online forms, survey tool, lead generation, form creator',
-  authors: [{ name: 'FormBuilder Pro Team' }],
+  title: 'Formify - Créez des formulaires intelligents en quelques minutes',
+  description: 'Créez, partagez et collectez des réponses avec notre plateforme de formulaires intelligente. Commencez gratuitement, évoluez selon vos besoins.',
+  keywords: 'formulaire, sondage, collecte de données, IA, création de formulaires, plateforme de formulaires',
+  authors: [{ name: 'Équipe Formify' }],
   openGraph: {
-    title: 'FormBuilder Pro - Create Beautiful Forms in Minutes',
-    description: 'Build, share, and collect responses with our powerful form builder.',
-    url: 'https://formbuilderpro.com',
-    siteName: 'FormBuilder Pro',
+    title: 'Formify - Créez des formulaires intelligents en quelques minutes',
+    description: 'Créez, partagez et collectez des réponses avec notre plateforme de formulaires intelligente.',
+    url: 'https://formify.com',
+    siteName: 'Formify',
     images: [
       {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'FormBuilder Pro',
+        alt: 'Formify',
       },
     ],
-    locale: 'en_US',
+    locale: 'fr_FR',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'FormBuilder Pro - Create Beautiful Forms in Minutes',
-    description: 'Build, share, and collect responses with our powerful form builder.',
+    title: 'Formify - Créez des formulaires intelligents en quelques minutes',
+    description: 'Créez, partagez et collectez des réponses avec notre plateforme de formulaires intelligente.',
     images: ['/og-image.png'],
   },
   robots: {
@@ -52,7 +52,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className="h-full">
+    <html lang="fr" className="h-full">
       <body className={`${inter.className} h-full bg-gray-50`}>
         <AuthProvider>
           {children}

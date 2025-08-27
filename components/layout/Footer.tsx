@@ -15,40 +15,40 @@ import {
 
 const footerLinks = {
   product: [
-    { name: 'Features', href: '#features' },
-    { name: 'Pricing', href: '#pricing' },
-    { name: 'Templates', href: '/templates' },
-    { name: 'Integrations', href: '/integrations' },
+    { name: 'Fonctionnalités', href: '#features' },
+    { name: 'Tarifs', href: '#pricing' },
+    { name: 'Modèles', href: '/templates' },
+    { name: 'Intégrations', href: '/integrations' },
     { name: 'API', href: '/api' }
   ],
   company: [
-    { name: 'About', href: '/about' },
+    { name: 'À propos', href: '/about' },
     { name: 'Blog', href: '/blog' },
-    { name: 'Careers', href: '/careers' },
-    { name: 'Press', href: '/press' },
-    { name: 'Partners', href: '/partners' }
+    { name: 'Carrières', href: '/careers' },
+    { name: 'Presse', href: '/press' },
+    { name: 'Partenaires', href: '/partners' }
   ],
   support: [
-    { name: 'Help Center', href: '/help' },
+    { name: 'Centre d\'aide', href: '/help' },
     { name: 'Documentation', href: '/docs' },
     { name: 'Contact', href: '/contact' },
-    { name: 'Status', href: '/status' },
-    { name: 'Community', href: '/community' }
+    { name: 'Statut', href: '/status' },
+    { name: 'Communauté', href: '/community' }
   ],
   legal: [
-    { name: 'Privacy Policy', href: '/privacy' },
-    { name: 'Terms of Service', href: '/terms' },
-    { name: 'Cookie Policy', href: '/cookies' },
-    { name: 'GDPR', href: '/gdpr' },
-    { name: 'Security', href: '/security' }
+    { name: 'Politique de confidentialité', href: '/privacy' },
+    { name: 'Conditions d\'utilisation', href: '/terms' },
+    { name: 'Politique des cookies', href: '/cookies' },
+    { name: 'RGPD', href: '/gdpr' },
+    { name: 'Sécurité', href: '/security' }
   ]
 }
 
 const socialLinks = [
-  { name: 'Twitter', href: 'https://twitter.com/formbuilderpro', icon: Twitter },
-  { name: 'LinkedIn', href: 'https://linkedin.com/company/formbuilderpro', icon: Linkedin },
-  { name: 'GitHub', href: 'https://github.com/formbuilderpro', icon: Github },
-  { name: 'Email', href: 'mailto:hello@formbuilderpro.com', icon: Mail }
+  { name: 'Twitter', href: 'https://twitter.com/formify', icon: Twitter },
+  { name: 'LinkedIn', href: 'https://linkedin.com/company/formify', icon: Linkedin },
+  { name: 'GitHub', href: 'https://github.com/formify', icon: Github },
+  { name: 'Email', href: 'mailto:hello@formify.com', icon: Mail }
 ]
 
 export function Footer() {
@@ -60,14 +60,14 @@ export function Footer() {
           {/* Brand Section */}
           <div className="lg:col-span-2">
             <div className="flex items-center mb-4">
-              <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-lg">F</span>
               </div>
-              <span className="ml-2 text-xl font-bold">FormBuilder Pro</span>
+              <span className="ml-2 text-xl font-bold">Formify</span>
             </div>
             <p className="text-gray-400 mb-6 max-w-sm">
-              Create beautiful forms in minutes, not hours. The most intuitive form builder 
-              for professionals and growing teams.
+              Créez des formulaires intelligents en quelques minutes. La plateforme la plus intuitive 
+              pour créer des formulaires professionnels avec l'aide de l'IA.
             </p>
             
             {/* Social Links */}
@@ -78,7 +78,7 @@ export function Footer() {
                   href={social.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center text-gray-400 hover:text-white hover:bg-primary-600 transition-colors duration-200"
+                  className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center text-gray-400 hover:text-white hover:bg-blue-600 transition-colors duration-200"
                 >
                   <social.icon className="w-5 h-5" />
                 </a>
@@ -89,7 +89,7 @@ export function Footer() {
           {/* Product Links */}
           <div>
             <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-4">
-              Product
+              Produit
             </h3>
             <ul className="space-y-3">
               {footerLinks.product.map((link) => (
@@ -108,7 +108,7 @@ export function Footer() {
           {/* Company Links */}
           <div>
             <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-4">
-              Company
+              Entreprise
             </h3>
             <ul className="space-y-3">
               {footerLinks.company.map((link) => (
@@ -146,7 +146,7 @@ export function Footer() {
           {/* Legal Links */}
           <div>
             <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-4">
-              Legal
+              Légal
             </h3>
             <ul className="space-y-3">
               {footerLinks.legal.map((link) => (
@@ -163,50 +163,26 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Trust Indicators */}
-        <div className="border-t border-gray-800 pt-8 mb-8">
-          <div className="flex flex-col md:flex-row items-center justify-between">
-            <div className="flex items-center space-x-6 mb-4 md:mb-0">
-              <div className="flex items-center text-gray-400">
-                <Shield className="w-5 h-5 mr-2" />
-                <span className="text-sm">SOC 2 Certified</span>
-              </div>
-              <div className="flex items-center text-gray-400">
-                <Zap className="w-5 h-5 mr-2" />
-                <span className="text-sm">99.9% Uptime</span>
-              </div>
-              <div className="flex items-center text-gray-400">
-                <Users className="w-5 h-5 mr-2" />
-                <span className="text-sm">10,000+ Users</span>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <img 
-                src="/badges/ssl-secure.svg" 
-                alt="SSL Secure" 
-                className="h-8 opacity-60"
-              />
-              <img 
-                src="/badges/gdpr-compliant.svg" 
-                alt="GDPR Compliant" 
-                className="h-8 opacity-60"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Bottom Footer */}
+        {/* Bottom Section */}
         <div className="border-t border-gray-800 pt-8">
-          <div className="flex flex-col md:flex-row items-center justify-between">
-            <div className="text-gray-400 text-sm mb-4 md:mb-0">
-              © 2024 FormBuilder Pro. All rights reserved.
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <div className="flex items-center text-gray-400 text-sm mb-4 md:mb-0">
+              <span>© 2024 Formify. Tous droits réservés.</span>
             </div>
             
-            <div className="flex items-center text-gray-400 text-sm">
-              <span>Made with</span>
-              <Heart className="w-4 h-4 mx-2 text-red-500 fill-current" />
-              <span>in Europe</span>
+            <div className="flex items-center space-x-6 text-sm text-gray-400">
+              <div className="flex items-center">
+                <Shield className="w-4 h-4 mr-2 text-green-500" />
+                <span>Sécurisé et conforme RGPD</span>
+              </div>
+              <div className="flex items-center">
+                <Zap className="w-4 h-4 mr-2 text-yellow-500" />
+                <span>IA intégrée</span>
+              </div>
+              <div className="flex items-center">
+                <Users className="w-4 h-4 mr-2 text-blue-500" />
+                <span>10 000+ utilisateurs</span>
+              </div>
             </div>
           </div>
         </div>
